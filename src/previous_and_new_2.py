@@ -179,10 +179,10 @@ class SimulationApp:
         self.previous_bottom_changes_label.grid(row=4, column=0, pady=5)
 
         self.new_top_changes_label = ttk.Label(main_frame, text="Change in New Top 5: ")
-        self.new_top_changes_label.grid(row=3, column=1, pady=5)
+        self.new_top_changes_label.grid(row=3, column=2, pady=5)  # Adjusted to column 2
 
         self.new_bottom_changes_label = ttk.Label(main_frame, text="Change in New Bottom 5: ")
-        self.new_bottom_changes_label.grid(row=4, column=1, pady=5)
+        self.new_bottom_changes_label.grid(row=4, column=2, pady=5)  # Adjusted to column 2
 
         # Label to display statistics
         self.statistics_label = ttk.Label(main_frame, text="Previous Mean: , Std Dev: \nNew Mean: , Std Dev: ")
