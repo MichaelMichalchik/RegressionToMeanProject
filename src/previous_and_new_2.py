@@ -69,9 +69,18 @@ class SimulationApp:
 
     def update_top_bottom_tables(self):
         for i, individual in enumerate(self.previous_top_five):
-            self.top_five_table.item(self.top_five_table.get_children()[i], values=(individual.id, f"{individual.phenotype:.2f}", f"{individual.genetic_score:.2f}", f"{individual.environmental_score:.2f}"))
+            values = (individual.id, f"{individual.phenotype:.2f}", f"{individual.genetic_score:.2f}", f"{individual.environmental_score:.2f}")
+            if i < len(self.top_five_table.get_children()):
+                self.top_five_table.item(self.top_five_table.get_children()[i], values=values)
+            else:
+                self.top_five_table.insert('', 'end', values=values)
+
         for i, individual in enumerate(self.previous_bottom_five):
-            self.bottom_five_table.item(self.bottom_five_table.get_children()[i], values=(individual.id, f"{individual.phenotype:.2f}", f"{individual.genetic_score:.2f}", f"{individual.environmental_score:.2f}"))
+            values = (individual.id, f"{individual.phenotype:.2f}", f"{individual.genetic_score:.2f}", f"{individual.environmental_score:.2f}")
+            if i < len(self.bottom_five_table.get_children()):
+                self.bottom_five_table.item(self.bottom_five_table.get_children()[i], values=values)
+            else:
+                self.bottom_five_table.insert('', 'end', values=values)
 
     def track_changes(self):
         if self.round > 1:
@@ -129,25 +138,32 @@ class SimulationApp:
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.columnconfigure(0, weight=2)  # Give more weight to the main table
+        main_frame.columnconfigure(1, weight=1)  # Equal weight for top five
+        main_frame.columnconfigure(2, weight=1)  # Equal weight for bottom five
 
         # Create three frames for the three tables
         table_frame_1 = ttk.Frame(main_frame, padding="5")
-        table_frame_1.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        table_frame_1.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 20))
 
         table_frame_2 = ttk.Frame(main_frame, padding="5")
-        table_frame_2.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
+        table_frame_2.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(20, 20))
 
         table_frame_3 = ttk.Frame(main_frame, padding="5")
-        table_frame_3.grid(row=0, column=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+        table_frame_3.grid(row=0, column=2, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(20, 0))
+
+        # Label to display genetic and environmental percentages
+        self.gen_env_label = ttk.Label(main_frame, text=f"Genetic: {self.weight_genetic*100:.1f}%, Environmental: {(1-self.weight_genetic)*100:.1f}%")
+        self.gen_env_label.grid(row=1, column=0, columnspan=3, pady=5)
 
         # Slider for genetic weight
         self.slider = ttk.Scale(main_frame, from_=0, to=100, orient='horizontal', command=self.slider_changed)
         self.slider.set(self.weight_genetic * 100)  # Start with 50% genetic weight
-        self.slider.grid(row=1, column=0, columnspan=3, pady=10)
+        self.slider.grid(row=2, column=0, columnspan=3, pady=10)
 
         # Button to reshuffle environment
         self.reshuffle_button = ttk.Button(main_frame, text="Reshuffle Environment", command=self.reshuffle_environment)
-        self.reshuffle_button.grid(row=2, column=0, columnspan=3, pady=10)
+        self.reshuffle_button.grid(row=3, column=0, columnspan=3, pady=10)
 
         # Table to display phenotypes
         columns = ("ID", "Phenotype", "Genetic", "Environmental")
@@ -158,53 +174,49 @@ class SimulationApp:
         self.table.heading("Environmental", text="Environmental")
         self.table.grid(row=0, column=0, pady=10)
 
+        # Adjust the size of the main table
+        self.table.column("ID", width=50)
+        self.table.column("Phenotype", width=100)
+        self.table.column("Genetic", width=100)
+        self.table.column("Environmental", width=100)
+
         for individual in self.population:
             self.table.insert('', 'end', values=(individual.id, f"{individual.phenotype:.2f}", f"{individual.genetic_score:.2f}", f"{individual.environmental_score:.2f}"))
 
         # New Top Five Table
         self.top_five_label = ttk.Label(table_frame_2, text="New Top Five")
         self.top_five_label.grid(row=0, column=0, pady=5)
-        self.top_five_table = ttk.Treeview(table_frame_2, columns=columns, show='headings')
-        self.top_five_table.heading("ID", text="ID")
-        self.top_five_table.heading("Phenotype", text="Phenotype")
-        self.top_five_table.heading("Genetic", text="Genetic")
-        self.top_five_table.heading("Environmental", text="Environmental")
+        self.top_five_table = ttk.Treeview(table_frame_2, columns=columns, show='headings', height=5)
+        for col in columns:
+            self.top_five_table.heading(col, text=col)
+            self.top_five_table.column(col, width=75)
         self.top_five_table.grid(row=1, column=0, pady=10)
-        for _ in range(5):
-            self.top_five_table.insert('', 'end', values=("", "", "", ""))
 
         # New Bottom Five Table
         self.bottom_five_label = ttk.Label(table_frame_3, text="New Bottom Five")
         self.bottom_five_label.grid(row=0, column=0, pady=5)
-        self.bottom_five_table = ttk.Treeview(table_frame_3, columns=columns, show='headings')
-        self.bottom_five_table.heading("ID", text="ID")
-        self.bottom_five_table.heading("Phenotype", text="Phenotype")
-        self.bottom_five_table.heading("Genetic", text="Genetic")
-        self.bottom_five_table.heading("Environmental", text="Environmental")
+        self.bottom_five_table = ttk.Treeview(table_frame_3, columns=columns, show='headings', height=5)
+        for col in columns:
+            self.bottom_five_table.heading(col, text=col)
+            self.bottom_five_table.column(col, width=75)
         self.bottom_five_table.grid(row=1, column=0, pady=10)
-        for _ in range(5):
-            self.bottom_five_table.insert('', 'end', values=("", "", "", ""))
 
         # Labels to display changes
         self.previous_top_changes_label = ttk.Label(main_frame, text="Change in Previous Top 5: ")
-        self.previous_top_changes_label.grid(row=3, column=0, pady=5)
+        self.previous_top_changes_label.grid(row=4, column=0, pady=5)
 
         self.previous_bottom_changes_label = ttk.Label(main_frame, text="Change in Previous Bottom 5: ")
-        self.previous_bottom_changes_label.grid(row=4, column=0, pady=5)
+        self.previous_bottom_changes_label.grid(row=5, column=0, pady=5)
 
         self.new_top_changes_label = ttk.Label(main_frame, text="Change in New Top 5: ")
-        self.new_top_changes_label.grid(row=3, column=2, pady=5)  # Adjusted to column 2
+        self.new_top_changes_label.grid(row=4, column=2, pady=5)  # Adjusted to column 2
 
         self.new_bottom_changes_label = ttk.Label(main_frame, text="Change in New Bottom 5: ")
-        self.new_bottom_changes_label.grid(row=4, column=2, pady=5)  # Adjusted to column 2
+        self.new_bottom_changes_label.grid(row=5, column=2, pady=5)  # Adjusted to column 2
 
         # Label to display statistics
         self.statistics_label = ttk.Label(main_frame, text="Previous Mean: , Std Dev: \nNew Mean: , Std Dev: ")
-        self.statistics_label.grid(row=5, column=0, columnspan=3, pady=5)
-
-        # Label to display genetic and environmental percentages
-        self.gen_env_label = ttk.Label(main_frame, text=f"Genetic: {self.weight_genetic*100:.1f}%, Environmental: {(1-self.weight_genetic)*100:.1f}%")
-        self.gen_env_label.grid(row=6, column=0, columnspan=3, pady=5)
+        self.statistics_label.grid(row=6, column=0, columnspan=3, pady=5)
 
     def slider_changed(self, event):
         self.weight_genetic = self.slider.get() / 100.0
